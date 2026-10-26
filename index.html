@@ -1,0 +1,2072 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>光點交錯：一點都沒錯 × SWISH 賽博大螢幕對戰桌遊</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Google Fonts: Orbitron, Chakra Petch & Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700;800&family=Noto+Sans+TC:wght@400;500;700;900&family=Orbitron:wght@600;800;900&family=Plus+Jakarta+Sans:wght@600;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            orbitron: ['Orbitron', 'sans-serif'],
+            chakra: ['Chakra Petch', 'sans-serif'],
+            sans: ['Noto Sans TC', 'Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            cyber: {
+              bg: '#060814',
+              card: 'rgba(15, 22, 42, 0.72)',
+              p1: '#00f3ff',
+              p1Dark: '#007b99',
+              p2: '#ff2a85',
+              p2Dark: '#a30048',
+              gold: '#ffc800',
+              emerald: '#00ff9d',
+              purple: '#b537f2'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ===================================================================
+       高階賽博透明玻璃與光影視覺系統 (Cyber Glass Design System)
+       =================================================================== */
+    :root {
+      --p1-neon: #00f3ff;
+      --p2-neon: #ff2a85;
+      --gold-neon: #ffc800;
+      --emerald-neon: #00ff9d;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #060814;
+      color: #f1f5f9;
+      overflow-x: hidden;
+      user-select: none;
+      min-height: 100vh;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+
+    /* 背景畫布 */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* 頂級毛玻璃面板 */
+    .glass-panel {
+      background: rgba(13, 19, 38, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+    }
+
+    /* 壓克力全息卡牌容器 */
+    .acrylic-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+      position: relative;
+      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      overflow: hidden;
+    }
+
+    .acrylic-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    }
+
+    .acrylic-card:hover {
+      border-color: rgba(255, 255, 255, 0.35);
+      transform: translateY(-2px);
+      box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+
+    /* 科技直角標線裝飾 */
+    .tech-corner {
+      position: relative;
+    }
+    .tech-corner::before, .tech-corner::after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      pointer-events: none;
+    }
+    .tech-corner::before {
+      top: -1px;
+      left: -1px;
+      border-top: 2px solid currentColor;
+      border-left: 2px solid currentColor;
+    }
+    .tech-corner::after {
+      bottom: -1px;
+      right: -1px;
+      border-bottom: 2px solid currentColor;
+      border-right: 2px solid currentColor;
+    }
+
+    /* P1 霓虹風格 */
+    .neon-p1 {
+      border-color: rgba(0, 243, 255, 0.5);
+      box-shadow: 0 0 25px rgba(0, 243, 255, 0.25), inset 0 0 15px rgba(0, 243, 255, 0.1);
+    }
+    .neon-text-p1 {
+      text-shadow: 0 0 14px rgba(0, 243, 255, 0.8), 0 0 30px rgba(0, 243, 255, 0.4);
+    }
+
+    /* P2 霓虹風格 */
+    .neon-p2 {
+      border-color: rgba(255, 42, 133, 0.5);
+      box-shadow: 0 0 25px rgba(255, 42, 133, 0.25), inset 0 0 15px rgba(255, 42, 133, 0.1);
+    }
+    .neon-text-p2 {
+      text-shadow: 0 0 14px rgba(255, 42, 133, 0.8), 0 0 30px rgba(255, 42, 133, 0.4);
+    }
+
+    /* 目標全息 Chamber */
+    .neon-target {
+      border-color: rgba(255, 200, 0, 0.6);
+      box-shadow: 0 0 30px rgba(255, 200, 0, 0.3), inset 0 0 20px rgba(255, 200, 0, 0.12);
+    }
+    .neon-text-gold {
+      text-shadow: 0 0 14px rgba(255, 200, 0, 0.85);
+    }
+
+    /* 實體按鍵感鍵帽 (Cyber Keycaps) */
+    .cyber-keycap {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-bottom: 3px solid rgba(0, 0, 0, 0.6);
+      border-radius: 8px;
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      transition: all 0.1s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cyber-keycap.active, .cyber-keycap:active {
+      transform: translateY(2px);
+      border-bottom-width: 1px;
+      box-shadow: 0 0 12px currentColor;
+    }
+
+    /* 螢幕震動懲罰特效 */
+    @keyframes screenShake {
+      0%, 100% { transform: translate(0, 0); }
+      15% { transform: translate(-8px, 4px) rotate(-0.5deg); }
+      30% { transform: translate(8px, -4px) rotate(0.5deg); }
+      50% { transform: translate(-6px, 2px); }
+      70% { transform: translate(6px, -2px); }
+    }
+    .shake {
+      animation: screenShake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    /* 成功光環脈衝動畫 */
+    @keyframes winPulse {
+      0% { box-shadow: 0 0 15px rgba(0, 255, 157, 0.4); }
+      50% { box-shadow: 0 0 60px rgba(0, 255, 157, 0.8), 0 0 100px rgba(0, 255, 157, 0.4); }
+      100% { box-shadow: 0 0 15px rgba(0, 255, 157, 0.4); }
+    }
+    .win-glow {
+      animation: winPulse 1.4s infinite alternate;
+    }
+
+    /* 倒數最後10秒緊急呼吸紅光 */
+    @keyframes urgentPulse {
+      0%, 100% { color: #f87171; text-shadow: 0 0 8px #ef4444; }
+      50% { color: #ffffff; text-shadow: 0 0 25px #dc2626, 0 0 45px #ef4444; }
+    }
+    .urgent-timer {
+      animation: urgentPulse 0.6s infinite alternate;
+    }
+
+    /* 旋轉微動畫 */
+    @keyframes spinSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin-slow {
+      animation: spinSlow 20s linear infinite;
+    }
+
+    /* 隱藏滾動條但保持滾動 */
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="flex flex-col font-sans relative selection:bg-cyan-500/30 selection:text-white">
+
+  <!-- 背景粒子繪圖 Canvas -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- 全域頂部導覽列 (Sleek Cyber Navigation) -->
+  <header class="relative z-20 glass-panel border-b border-slate-800/80 px-4 md:px-8 py-3 flex items-center justify-between">
+    <!-- Brand / Logo -->
+    <div class="flex items-center space-x-3.5">
+      <div class="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 via-fuchsia-600 to-amber-400 p-[2px] shadow-lg shadow-cyan-500/25 group">
+        <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+          <i class="fa-solid fa-shapes text-transparent bg-clip-text bg-gradient-to-tr from-cyan-300 to-fuchsia-400 text-xl group-hover:scale-110 transition duration-300"></i>
+        </div>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <h1 class="font-orbitron text-xl md:text-2xl font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-yellow-300">
+            DOT × SWISH
+          </h1>
+          <span class="text-[10px] font-orbitron font-extrabold px-2 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 tracking-wider">
+            ARCADE v2.0
+          </span>
+        </div>
+        <p class="text-xs text-slate-400 font-medium">大螢幕虛擬透明卡牌 · 空間旋轉疊合推理桌遊</p>
+      </div>
+    </div>
+
+    <!-- 模式切換膠囊導覽 (Segmented Pill Switcher) -->
+    <div class="hidden md:flex items-center bg-slate-950/80 p-1.5 rounded-2xl border border-slate-700/60 shadow-inner">
+      <button id="btn-mode-2p" onclick="game.switchMode('2p')" class="px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center space-x-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 text-white shadow-lg shadow-cyan-500/30">
+        <i class="fa-solid fa-gamepad"></i>
+        <span>雙人極速對戰 (2P)</span>
+      </button>
+      <button id="btn-mode-1p" onclick="game.switchMode('1p')" class="px-5 py-2 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all flex items-center space-x-2">
+        <i class="fa-solid fa-puzzle-piece"></i>
+        <span>單人解謎闖關 (1P)</span>
+      </button>
+      <button id="btn-mode-sandbox" onclick="game.switchMode('sandbox')" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all flex items-center space-x-2">
+        <i class="fa-solid fa-flask"></i>
+        <span>自由沙盒實驗</span>
+      </button>
+    </div>
+
+    <!-- 功能快捷工具列 (Audio, Guide, Fullscreen) -->
+    <div class="flex items-center space-x-2 md:space-x-3">
+      <!-- BGM 合成背景音樂 -->
+      <button onclick="audioSynth.toggleBGM()" id="btn-bgm" title="賽博氛圍背景音樂 (BGM)" class="w-10 h-10 acrylic-card rounded-xl flex items-center justify-center text-slate-400 hover:text-cyan-400 transition">
+        <i class="fa-solid fa-music text-sm"></i>
+      </button>
+
+      <!-- 音效開關 -->
+      <button onclick="audioSynth.toggleMute()" id="btn-sound" title="切換音效" class="w-10 h-10 acrylic-card rounded-xl flex items-center justify-center text-slate-300 hover:text-cyan-400 transition">
+        <i class="fa-solid fa-volume-high text-sm"></i>
+      </button>
+
+      <!-- 規則玩法說明 -->
+      <button onclick="game.toggleModal('rules-modal', true)" class="px-3.5 h-10 acrylic-card rounded-xl text-sm font-bold text-slate-300 hover:text-cyan-400 transition flex items-center space-x-2">
+        <i class="fa-solid fa-circle-question text-base text-cyan-400"></i>
+        <span class="hidden sm:inline">玩法手冊</span>
+      </button>
+
+      <!-- 全螢幕切換 -->
+      <button onclick="game.toggleFullScreen()" title="切換大螢幕全螢幕" class="w-10 h-10 acrylic-card rounded-xl flex items-center justify-center text-slate-300 hover:text-yellow-400 transition">
+        <i class="fa-solid fa-expand text-sm"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- 行動裝置 / 小螢幕模式切換列 -->
+  <div class="md:hidden relative z-10 bg-slate-900/90 border-b border-slate-800 p-2 flex items-center justify-around text-xs">
+    <button onclick="game.switchMode('2p')" id="m-btn-mode-2p" class="px-3 py-1.5 rounded-lg font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/40">2P 對戰</button>
+    <button onclick="game.switchMode('1p')" id="m-btn-mode-1p" class="px-3 py-1.5 rounded-lg font-bold text-slate-400">1P 闖關</button>
+    <button onclick="game.switchMode('sandbox')" id="m-btn-mode-sandbox" class="px-3 py-1.5 rounded-lg font-bold text-slate-400">沙盒實驗</button>
+  </div>
+
+  <!-- 主要遊戲區域 Container -->
+  <main class="relative z-10 flex-1 flex flex-col p-3 md:p-6 max-w-[1920px] mx-auto w-full gap-5">
+
+    <!-- =============================================================
+         模式 1：2P 雙人極速對戰模式 (Split-Screen Battle Arena)
+         ============================================================= -->
+    <div id="mode-2p-view" class="flex-1 flex flex-col gap-5">
+      
+      <!-- 中央目標區域 & 比分主控台 (Central Battle Hub) -->
+      <div class="glass-panel rounded-3xl p-4 md:p-5 flex flex-col lg:flex-row items-center justify-between gap-5 border border-slate-700/60 shadow-2xl relative overflow-hidden">
+        
+        <!-- 背景流光飾條 -->
+        <div class="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-transparent to-fuchsia-500/5 pointer-events-none"></div>
+
+        <!-- P1 戰績看板 (左) -->
+        <div class="flex items-center space-x-4 bg-slate-950/70 px-5 py-3.5 rounded-2xl border border-cyan-500/40 w-full lg:w-auto justify-between lg:justify-start shadow-lg shadow-cyan-950/30">
+          <div class="flex items-center space-x-3.5">
+            <div class="relative">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-slate-950 font-black font-orbitron text-lg shadow-lg shadow-cyan-400/30">
+                P1
+              </div>
+              <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-slate-950"></span>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs text-cyan-400 font-bold uppercase tracking-wider">玩家一 (Blue Neon)</span>
+              </div>
+              <div class="text-3xl font-orbitron font-black text-white neon-text-p1" id="p1-score">0 <span class="text-sm font-sans font-bold text-cyan-300">PTS</span></div>
+            </div>
+          </div>
+          <!-- 快捷鍵指引膠囊 -->
+          <div class="hidden sm:flex flex-col items-end text-[11px] text-slate-400 space-y-1">
+            <div><span class="cyber-keycap px-1.5 py-0.5 text-cyan-300">A</span> <span class="cyber-keycap px-1.5 py-0.5 text-cyan-300">D</span> 旋轉 90°</div>
+            <div><span class="cyber-keycap px-1.5 py-0.5 text-cyan-300">W</span> 翻面 · <span class="cyber-keycap px-2 py-0.5 text-cyan-300">SPACE</span> 提交</div>
+          </div>
+        </div>
+
+        <!-- 中央公共目標卡與對戰輪次控制 (Target Chamber) -->
+        <div class="flex flex-col items-center justify-center space-y-2.5">
+          <div class="flex items-center space-x-3">
+            <span class="text-[11px] font-orbitron font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-bullseye text-yellow-400"></i> TARGET PATTERN
+            </span>
+            <span id="p2-round-indicator" class="text-xs font-orbitron font-black text-yellow-300 bg-yellow-500/15 px-3 py-0.5 rounded-full border border-yellow-500/40 shadow-sm shadow-yellow-500/20">
+              ROUND 1
+            </span>
+          </div>
+          
+          <div class="flex items-center space-x-5 md:space-x-8">
+            <!-- 賽博目標展示視圖 (帶旋轉 HUD 裝飾線) -->
+            <div class="relative group">
+              <!-- 外圍 HUD 旋轉裝飾線 -->
+              <div class="absolute -inset-2.5 rounded-2xl border border-dashed border-yellow-500/25 pointer-events-none animate-spin-slow"></div>
+              <div class="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-yellow-400 to-fuchsia-500 rounded-2xl blur-md opacity-35 group-hover:opacity-70 transition duration-500"></div>
+              
+              <div id="target-card-container" class="relative w-36 h-36 md:w-44 md:h-44 acrylic-card rounded-2xl p-2.5 flex items-center justify-center bg-slate-950/90 neon-target">
+                <!-- SVG target renders here -->
+              </div>
+            </div>
+
+            <!-- 次數與倒數計時器 -->
+            <div class="flex flex-col items-center justify-center space-y-2">
+              <div class="flex flex-col items-center">
+                <span class="text-[10px] font-orbitron text-slate-400 font-bold tracking-wider">TIME LEFT</span>
+                <div id="race-timer" class="text-3xl md:text-4xl font-orbitron font-black text-slate-100">60</div>
+              </div>
+              <button onclick="game.next2PRound()" class="px-3 py-1.5 acrylic-card rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center space-x-1.5 shadow-sm">
+                <i class="fa-solid fa-forward-step text-yellow-400"></i>
+                <span>跳過此題</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- P2 戰績看板 (右) -->
+        <div class="flex items-center space-x-4 bg-slate-950/70 px-5 py-3.5 rounded-2xl border border-fuchsia-500/40 w-full lg:w-auto justify-between lg:justify-end shadow-lg shadow-fuchsia-950/30">
+          <!-- 快捷鍵指引膠囊 -->
+          <div class="hidden sm:flex flex-col items-start text-[11px] text-slate-400 space-y-1">
+            <div><span class="cyber-keycap px-1.5 py-0.5 text-fuchsia-300">←</span> <span class="cyber-keycap px-1.5 py-0.5 text-fuchsia-300">→</span> 旋轉 90°</div>
+            <div><span class="cyber-keycap px-1.5 py-0.5 text-fuchsia-300">↑</span> 翻面 · <span class="cyber-keycap px-2 py-0.5 text-fuchsia-300">ENTER</span> 提交</div>
+          </div>
+          <div class="flex items-center space-x-3.5">
+            <div class="text-right">
+              <div class="flex items-center justify-end space-x-2">
+                <span class="text-xs text-fuchsia-400 font-bold uppercase tracking-wider">玩家二 (Pink Neon)</span>
+              </div>
+              <div class="text-3xl font-orbitron font-black text-white neon-text-p2" id="p2-score">0 <span class="text-sm font-sans font-bold text-fuchsia-300">PTS</span></div>
+            </div>
+            <div class="relative">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-600 flex items-center justify-center text-white font-black font-orbitron text-lg shadow-lg shadow-fuchsia-500/30">
+                P2
+              </div>
+              <span class="absolute -bottom-1 -left-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-slate-950"></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 左右分割對戰工作區 (Split Arenas) -->
+      <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5 min-h-0">
+        
+        <!-- P1 工作區 (左側 Cyan) -->
+        <div id="p1-panel" class="glass-panel rounded-3xl p-5 md:p-6 flex flex-col justify-between border-2 neon-p1 relative overflow-hidden transition-all duration-300">
+          
+          <!-- 頂部資訊與操作卡切換 -->
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center space-x-2.5">
+              <span class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></span>
+              <h2 class="font-orbitron font-extrabold text-cyan-400 tracking-wider text-base md:text-lg">
+                P1 WORKSPACE
+              </h2>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span id="p1-active-card-tag" class="text-[11px] font-bold text-cyan-300 bg-cyan-950/80 px-2.5 py-0.5 rounded-lg border border-cyan-700">
+                操控對象：全部卡牌
+              </span>
+              <span id="p1-status" class="text-xs font-bold text-slate-300 bg-slate-900 px-3 py-0.5 rounded-full border border-slate-700">
+                準備中
+              </span>
+            </div>
+          </div>
+
+          <!-- P1 工作台組合預覽 (透光工作檯) -->
+          <div class="flex-1 flex flex-col items-center justify-center py-2 relative">
+            <div class="relative group">
+              <!-- 底層藍色光暈 -->
+              <div class="absolute -inset-4 bg-cyan-500/15 rounded-3xl blur-2xl group-hover:bg-cyan-500/25 transition"></div>
+              
+              <!-- 科技 HUD 邊角 -->
+              <div class="tech-corner text-cyan-400">
+                <div id="p1-workbench" class="relative w-48 h-48 md:w-56 md:h-56 acrylic-card rounded-2xl p-2 bg-slate-950/85 border-2 border-cyan-500/60 flex items-center justify-center shadow-2xl">
+                  <!-- Combined Stacked SVG renders here -->
+                </div>
+              </div>
+            </div>
+            <div class="text-[11px] font-medium text-slate-400 mt-2 flex items-center gap-1">
+              <i class="fa-solid fa-layer-group text-cyan-400"></i>
+              <span>疊加預覽 (點選下方卡片切換單卡或全組操控)</span>
+            </div>
+          </div>
+
+          <!-- P1 控制工具列 -->
+          <div class="space-y-3.5 mt-2">
+            <!-- 變形控制按鈕包 -->
+            <div class="grid grid-cols-4 gap-2">
+              <button onclick="game.rotatePlayerCard(1, -90)" id="p1-key-a" class="acrylic-card py-2.5 rounded-xl font-bold text-xs text-cyan-300 hover:bg-cyan-500/20 active:scale-95 transition flex flex-col items-center justify-center space-y-1">
+                <i class="fa-solid fa-rotate-left text-base"></i>
+                <span>左旋 90° <kbd class="cyber-keycap px-1 text-[10px] ml-1">A</kbd></span>
+              </button>
+              <button onclick="game.rotatePlayerCard(1, 90)" id="p1-key-d" class="acrylic-card py-2.5 rounded-xl font-bold text-xs text-cyan-300 hover:bg-cyan-500/20 active:scale-95 transition flex flex-col items-center justify-center space-y-1">
+                <i class="fa-solid fa-rotate-right text-base"></i>
+                <span>右旋 90° <kbd class="cyber-keycap px-1 text-[10px] ml-1">D</kbd></span>
+              </button>
+              <button onclick="game.flipPlayerCard(1, 'H')" id="p1-key-w" class="acrylic-card py-2.5 rounded-xl font-bold text-xs text-cyan-300 hover:bg-cyan-500/20 active:scale-95 transition flex flex-col items-center justify-center space-y-1">
+                <i class="fa-solid fa-arrows-left-right text-base"></i>
+                <span>水平翻面 <kbd class="cyber-keycap px-1 text-[10px] ml-1">W</kbd></span>
+              </button>
+              <button onclick="game.clearPlayerStack(1)" class="acrylic-card py-2.5 rounded-xl font-bold text-xs text-rose-400 hover:bg-rose-500/20 active:scale-95 transition flex flex-col items-center justify-center space-y-1">
+                <i class="fa-solid fa-arrow-rotate-left text-base"></i>
+                <span>重設方位</span>
+              </button>
+            </div>
+
+            <!-- 卡牌庫手牌選擇區 -->
+            <div>
+              <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1.5 px-1">
+                <span>點擊選取加入/切換焦點：</span>
+                <span class="text-cyan-400 cursor-pointer hover:underline" onclick="game.focusAllCards(1)">
+                  <i class="fa-solid fa-object-group mr-1"></i>選取全部卡牌
+                </span>
+              </div>
+              <div class="flex items-center justify-center space-x-3 overflow-x-auto py-1 scrollbar-none" id="p1-hand-cards">
+                <!-- P1 Hand cards rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- 提交大按鈕 -->
+            <button onclick="game.submitAnswer(1)" id="p1-btn-submit" class="w-full py-3.5 md:py-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-cyan-400 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-lg md:text-xl tracking-wider shadow-xl shadow-cyan-500/30 transition transform active:scale-98 flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-bolt text-amber-300 text-xl"></i>
+              <span>SWISH! 提交比對</span>
+              <kbd class="cyber-keycap text-xs px-2 py-0.5 text-slate-950 bg-cyan-200/90 ml-2">SPACE</kbd>
+            </button>
+          </div>
+        </div>
+
+        <!-- P2 工作區 (右側 Magenta) -->
+        <div id="p2-panel" class="glass-panel rounded-3xl p-5 md:p-6 flex flex-col justify-between border-2 neon-p2 relative overflow-hidden transition-all duration-300">
+          
+          <!-- 頂部資訊與操作卡切換 -->
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center space-x-2.5">
+              <span class="w-3 h-3 rounded-full bg-fuchsia-400 animate-pulse"></span>
+              <h2 class="font-orbitron font-extrabold text-fuchsia-400 tracking-wider text-base md:text-lg">
+                P2 WORKSPACE
+              </h2>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span id="p2-active-card-tag" class="text-[11px] font-bold text-fuchsia-300 bg-fuchsia-950/80 px-2.5 py-0.5 rounded-lg border border-fuchsia-700">
+                操控對象：全部卡牌
+              </span>
+              <span id="p2-status" class="text-xs font-bold text-slate-300 bg-slate-900 px-3 py-0.5 rounded-full border border-slate-700">
+                準備中
+              </span>
+            </div>
+          </div>
+
+          <!-- P2 工作台組合預覽 (透光工作檯) -->
+          <div class="flex-1 flex flex-col items-center justify-center py-2 relative">
+            <div class="relative group">
+              <!-- 底層粉紫光暈 -->
+              <div class="absolute -inset-4 bg-fuchsia-500/15 rounded-3xl blur-2xl group-hover:bg-fuchsia-500/25 transition"></div>
+              
+              <!-- 科技 HUD 邊角 -->
+              <div class="tech-corner text-fuchsia-400">
+                <div id="p2-workbench" class="relative w-48 h-48 md:w-56 md:h-56 acrylic-card rounded-2xl p-2 bg-slate-950/85 border-2 border-fuchsia-500/60 flex items-center justify-center shadow-2xl">
+                  <!-- Combined Stacked SVG renders here -->
+                </div>
+              </div>
+            </div>
+            <div class="text-[11px] font-medium text-slate-400 mt-2 flex items-center gap-1">
+              <i class="fa-solid fa-layer-group text-fuchsia-400"></i>
+              <span>疊加預覽 (點選下方卡片切換單卡或全組操控)</span>
+            </div>
+          </div>
+
+          <!-- P2 控制工具列 -->
+          <div class="space-y-3.5 mt-2">
+            <!-- 變形控制按鈕包 -->
+            <div class="grid grid-cols-4 gap-2">
+              <button onclick="game.rotatePlayerCard(2, -90)" id="p2-key-left" class="acrylic-card py-2.5 rounded-xl font-bold text-xs text-fuchsia-300 hover:bg-fuchsia-500/20 active:scale-95 transition flex flex-col items-center justify-center space-y-1">
+                <i class="fa-solid fa-rotate-left text-base"></i>
+                <span>左旋 90° <kbd class="cyber-keycap px-1 text-[10px] ml-1">←</kbd></span>
+              </button>
+              <button onclick="game.rotatePlayerCard(2, 90)" id="p2-key-right" class="acrylic-card py-2.5 rounded-xl font-bold text-xs text-fuchsia-300 hover:bg-fuchsia-500/20 active:scale-95 transition flex flex-col items-center justify-center space-y-1">
+                <i class="fa-solid fa-rotate-right text-base"></i>
+                <span>右旋 90° <kbd class="cyber-keycap px-1 text-[10px] ml-1">→</kbd></span>
+              </button>
+              <button onclick="game.flipPlayerCard(2, 'H')" id="p2-key-up" class="acrylic-card py-2.5 rounded-xl font-bold text-xs text-fuchsia-300 hover:bg-fuchsia-500/20 active:scale-95 transition flex flex-col items-center justify-center space-y-1">
+                <i class="fa-solid fa-arrows-left-right text-base"></i>
+                <span>水平翻面 <kbd class="cyber-keycap px-1 text-[10px] ml-1">↑</kbd></span>
+              </button>
+              <button onclick="game.clearPlayerStack(2)" class="acrylic-card py-2.5 rounded-xl font-bold text-xs text-rose-400 hover:bg-rose-500/20 active:scale-95 transition flex flex-col items-center justify-center space-y-1">
+                <i class="fa-solid fa-arrow-rotate-left text-base"></i>
+                <span>重設方位</span>
+              </button>
+            </div>
+
+            <!-- 卡牌庫手牌選擇區 -->
+            <div>
+              <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1.5 px-1">
+                <span>點擊選取加入/切換焦點：</span>
+                <span class="text-fuchsia-400 cursor-pointer hover:underline" onclick="game.focusAllCards(2)">
+                  <i class="fa-solid fa-object-group mr-1"></i>選取全部卡牌
+                </span>
+              </div>
+              <div class="flex items-center justify-center space-x-3 overflow-x-auto py-1 scrollbar-none" id="p2-hand-cards">
+                <!-- P2 Hand cards rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- 提交大按鈕 -->
+            <button onclick="game.submitAnswer(2)" id="p2-btn-submit" class="w-full py-3.5 md:py-4 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-600 hover:from-fuchsia-400 hover:to-rose-500 text-white font-black text-lg md:text-xl tracking-wider shadow-xl shadow-fuchsia-500/30 transition transform active:scale-98 flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-bolt text-yellow-300 text-xl"></i>
+              <span>SWISH! 提交比對</span>
+              <kbd class="cyber-keycap text-xs px-2 py-0.5 text-white bg-fuchsia-900 ml-2">ENTER</kbd>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- =============================================================
+         模式 2：1P 單人空間解謎闖關 (Single Player Quest)
+         ============================================================= -->
+    <div id="mode-1p-view" class="hidden flex-1 flex flex-col gap-6 max-w-5xl mx-auto w-full">
+      
+      <!-- 頂部闖關進度資訊欄 -->
+      <div class="glass-panel rounded-3xl p-5 md:p-6 flex flex-wrap items-center justify-between gap-4 border border-slate-700/60 shadow-xl">
+        <div class="flex items-center space-x-4">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-500 flex items-center justify-center text-slate-950 font-black text-2xl shadow-lg shadow-amber-400/30">
+            <i class="fa-solid fa-trophy"></i>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center gap-2">
+              <span>SOLO PUZZLE LAB</span>
+              <span id="1p-difficulty-badge" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px]">新手難度</span>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-orbitron font-extrabold text-white" id="1p-stage-title">STAGE 01</h2>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-6 md:space-x-8">
+          <div class="text-center">
+            <div class="text-xs text-slate-400 font-medium">累計步數</div>
+            <div class="text-2xl md:text-3xl font-orbitron font-black text-yellow-400" id="1p-move-count">0</div>
+          </div>
+          <div class="text-center">
+            <div class="text-xs text-slate-400 font-medium">最佳評星</div>
+            <div class="text-xl text-amber-300 space-x-1" id="1p-stars">
+              <i class="fa-solid fa-star"></i>
+              <i class="fa-solid fa-star"></i>
+              <i class="fa-solid fa-star"></i>
+            </div>
+          </div>
+          
+          <div class="flex items-center space-x-2">
+            <!-- 提示按鈕 -->
+            <button onclick="game.give1PHint()" id="btn-1p-hint" class="px-3.5 py-2.5 acrylic-card rounded-xl text-xs font-bold text-yellow-300 hover:text-white hover:bg-yellow-500/20 transition flex items-center space-x-1.5">
+              <i class="fa-solid fa-lightbulb"></i>
+              <span>提示 (Hint)</span>
+            </button>
+
+            <!-- 復原上一步 -->
+            <button onclick="game.undo1PMove()" class="px-3.5 py-2.5 acrylic-card rounded-xl text-xs font-bold text-slate-300 hover:text-white transition flex items-center space-x-1.5">
+              <i class="fa-solid fa-rotate-left"></i>
+              <span>復原</span>
+            </button>
+
+            <!-- 重設關卡 -->
+            <button onclick="game.reset1PStage()" class="px-3.5 py-2.5 acrylic-card rounded-xl text-xs font-bold text-slate-300 hover:text-white transition flex items-center space-x-1.5">
+              <i class="fa-solid fa-arrow-rotate-right"></i>
+              <span>重設</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 解謎雙核心工作檯 (左目標，右操作區) -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
+        
+        <!-- 左側：目標卡區 (Target Chamber) -->
+        <div class="md:col-span-5 glass-panel rounded-3xl p-6 flex flex-col items-center justify-between border-2 border-yellow-500/40 shadow-xl relative overflow-hidden">
+          <div class="flex items-center justify-between w-full mb-3">
+            <span class="text-xs font-orbitron font-extrabold text-yellow-400 tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-bullseye"></i> TARGET PATTERN
+            </span>
+            <span class="text-[10px] text-yellow-200 bg-yellow-950/80 px-2 py-0.5 rounded-full border border-yellow-800">目標圖樣</span>
+          </div>
+
+          <div class="relative group my-2">
+            <div class="absolute -inset-2 bg-yellow-500/15 rounded-3xl blur-xl"></div>
+            <div id="1p-target-container" class="relative w-52 h-52 md:w-60 md:h-60 acrylic-card rounded-2xl p-3 bg-slate-950/90 border-2 border-yellow-400/80 flex items-center justify-center shadow-2xl">
+              <!-- 1P Target SVG renders here -->
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-400 text-center leading-relaxed mt-2">
+            透過下方卡片的旋轉與翻面，使其疊合出的最終圖形與上方目標圖案完全一致！
+          </p>
+        </div>
+
+        <!-- 右側：玩家實驗室工作台 (Player Crafting Lab) -->
+        <div class="md:col-span-7 glass-panel rounded-3xl p-6 flex flex-col items-center justify-between border-2 border-cyan-500/40 shadow-xl">
+          <div class="flex items-center justify-between w-full mb-3">
+            <span class="text-xs font-orbitron font-extrabold text-cyan-400 tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-layer-group"></i> YOUR COMPOSITE
+            </span>
+            <span id="1p-active-card-tag" class="text-[11px] font-bold text-cyan-300 bg-cyan-950/80 px-2.5 py-0.5 rounded-lg border border-cyan-700">
+              操控對象：全部卡牌
+            </span>
+          </div>
+          
+          <div class="relative group my-2">
+            <div class="absolute -inset-2 bg-cyan-500/15 rounded-3xl blur-xl"></div>
+            <div id="1p-workbench" class="relative w-52 h-52 md:w-60 md:h-60 acrylic-card rounded-2xl p-3 bg-slate-950/90 border-2 border-cyan-400/80 flex items-center justify-center shadow-2xl">
+              <!-- 1P Stacked SVG renders here -->
+            </div>
+          </div>
+
+          <!-- 快速變形控制操作欄 -->
+          <div class="grid grid-cols-4 gap-2.5 w-full mt-3">
+            <button onclick="game.rotatePlayerCard(0, -90)" class="acrylic-card py-3 rounded-xl font-bold text-xs text-cyan-300 hover:bg-cyan-500/20 active:scale-95 transition flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-rotate-left"></i>
+              <span>左旋 90°</span>
+            </button>
+            <button onclick="game.rotatePlayerCard(0, 90)" class="acrylic-card py-3 rounded-xl font-bold text-xs text-cyan-300 hover:bg-cyan-500/20 active:scale-95 transition flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-rotate-right"></i>
+              <span>右旋 90°</span>
+            </button>
+            <button onclick="game.flipPlayerCard(0, 'H')" class="acrylic-card py-3 rounded-xl font-bold text-xs text-cyan-300 hover:bg-cyan-500/20 active:scale-95 transition flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-arrows-left-right"></i>
+              <span>水平翻面</span>
+            </button>
+            <button onclick="game.clearPlayerStack(0)" class="acrylic-card py-3 rounded-xl font-bold text-xs text-rose-400 hover:bg-rose-500/20 active:scale-95 transition flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-trash-can"></i>
+              <span>重設方位</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 1P 手牌池與提交驗證區 -->
+      <div class="glass-panel rounded-3xl p-5 md:p-6 border border-slate-700/60 shadow-xl">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-3 font-medium">
+          <span>點選卡牌切換疊加/操控焦點（右上標籤顯示角度與翻面）：</span>
+          <span class="text-amber-400 cursor-pointer hover:underline" onclick="game.focusAllCards(0)">
+            <i class="fa-solid fa-object-group mr-1"></i>選取全部卡牌
+          </span>
+        </div>
+        <div id="1p-hand-cards" class="flex items-center justify-center space-x-4 overflow-x-auto py-2 scrollbar-none">
+          <!-- 1P Hand Cards rendered here -->
+        </div>
+        
+        <button onclick="game.submit1PAnswer()" class="w-full mt-4 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xl tracking-wider shadow-xl shadow-yellow-500/25 transition transform active:scale-98 flex items-center justify-center space-x-2">
+          <i class="fa-solid fa-check-double text-2xl"></i>
+          <span>驗證通關答案 (VERIFY STACK)</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- =============================================================
+         模式 3：自由沙盒實驗室 (Sandbox Playground)
+         ============================================================= -->
+    <div id="mode-sandbox-view" class="hidden flex-1 flex flex-col gap-6 max-w-5xl mx-auto w-full">
+      <div class="glass-panel rounded-3xl p-6 border border-slate-700/60 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+          <div class="text-xs font-bold text-purple-400 uppercase tracking-widest">CREATIVE SANDBOX</div>
+          <h2 class="text-2xl font-orbitron font-extrabold text-white">自由疊卡與 SWISH 實驗台</h2>
+          <p class="text-xs text-slate-400 mt-1">任意旋轉翻面卡片，觀察多張透明卡片如何完美組合成雙環 SWISH 幾何形態！</p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button onclick="game.randomizeSandboxCards()" class="px-4 py-2.5 acrylic-card rounded-xl text-xs font-bold text-purple-300 hover:text-white transition flex items-center space-x-2">
+            <i class="fa-solid fa-dice"></i>
+            <span>重新隨機發卡</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <!-- 疊加預覽 -->
+        <div class="glass-panel rounded-3xl p-6 flex flex-col items-center justify-center border-2 border-purple-500/40">
+          <span class="text-xs font-orbitron font-bold text-purple-300 mb-3">即時疊加預覽 (REALTIME COMPOSITE)</span>
+          <div id="sandbox-workbench" class="w-64 h-64 acrylic-card rounded-2xl p-3 bg-slate-950/90 border-2 border-purple-500/60 flex items-center justify-center shadow-2xl">
+            <!-- Sandbox preview -->
+          </div>
+          <div id="sandbox-match-stats" class="text-xs text-slate-300 mt-4 flex items-center gap-3">
+            <!-- Match counters -->
+          </div>
+        </div>
+
+        <!-- 自由控制列 -->
+        <div class="glass-panel rounded-3xl p-6 space-y-5 border border-slate-700/60">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">選擇當前操控卡片：</span>
+            <span id="sandbox-active-card-tag" class="text-[11px] font-bold text-purple-300 bg-purple-950 px-2 py-0.5 rounded border border-purple-700">卡牌 #1</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3">
+            <button onclick="game.rotatePlayerCard(3, 90)" class="acrylic-card py-3 rounded-xl font-bold text-sm text-purple-300 hover:bg-purple-500/20 transition flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-rotate-right"></i>
+              <span>旋轉 90°</span>
+            </button>
+            <button onclick="game.flipPlayerCard(3, 'H')" class="acrylic-card py-3 rounded-xl font-bold text-sm text-purple-300 hover:bg-purple-500/20 transition flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-arrows-left-right"></i>
+              <span>水平翻面</span>
+            </button>
+            <button onclick="game.clearPlayerStack(3)" class="acrylic-card py-3 rounded-xl font-bold text-sm text-rose-400 hover:bg-rose-500/20 transition flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-arrow-rotate-left"></i>
+              <span>重設卡牌</span>
+            </button>
+          </div>
+
+          <div class="pt-2">
+            <div class="text-xs text-slate-400 mb-2">手牌選擇清單：</div>
+            <div id="sandbox-hand-cards" class="flex items-center justify-center space-x-3 overflow-x-auto py-1">
+              <!-- Sandbox Hand Cards -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- =============================================================
+       Modal 1：規則與互動玩法圖解手冊 (Rules Modal)
+       ============================================================= -->
+  <div id="rules-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass-panel max-w-2xl w-full rounded-3xl p-6 md:p-8 border border-slate-700 space-y-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-700/80 pb-4">
+        <h3 class="text-xl md:text-2xl font-orbitron font-extrabold text-cyan-400 flex items-center space-x-3">
+          <i class="fa-solid fa-book-open"></i>
+          <span>遊戲玩法與規則指引手冊</span>
+        </h3>
+        <button onclick="game.toggleModal('rules-modal', false)" class="text-slate-400 hover:text-white text-2xl transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-slate-300 text-sm leading-relaxed">
+        
+        <!-- 什麼是 SWISH -->
+        <div class="bg-slate-900/90 p-4.5 rounded-2xl border border-yellow-500/30">
+          <h4 class="font-bold text-yellow-400 text-base mb-1.5 flex items-center gap-2">
+            <i class="fa-solid fa-sparkles"></i> 什麼是 SWISH？(核心幾何機制)
+          </h4>
+          <p>
+            每張透明卡片皆為 3×3 網格，網格分佈著不同顏色的<b>「實心圓點 (Dot)」</b>與<b>「空心圓圈 (Ring)」</b>。<br>
+            當一張卡片的圓點與另一張卡片的同色圓圈疊合時，將融合為一個閃亮的<b>「雙環 SWISH」</b>！
+            玩家需透過「旋轉 90°」與「水平鏡像翻面」，拼湊出與中央目標卡完全相同的圖形。
+          </p>
+        </div>
+
+        <!-- 模式玩法說明 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-slate-900/80 p-4 rounded-2xl border border-cyan-500/30">
+            <h4 class="font-bold text-cyan-400 text-base mb-1 flex items-center gap-2">
+              <i class="fa-solid fa-gamepad"></i> 雙人極速對戰 (2P)
+            </h4>
+            <ul class="list-disc list-inside space-y-1 text-xs text-slate-300">
+              <li>雙人共用同一個目標卡與相同的手牌庫。</li>
+              <li>率先疊湊出目標圖案並提交的玩家獲勝！</li>
+              <li>支援本機雙人鍵盤同時操縱，大螢幕對戰手感極佳。</li>
+            </ul>
+          </div>
+          <div class="bg-slate-900/80 p-4 rounded-2xl border border-amber-500/30">
+            <h4 class="font-bold text-amber-400 text-base mb-1 flex items-center gap-2">
+              <i class="fa-solid fa-puzzle-piece"></i> 單人解謎闖關 (1P)
+            </h4>
+            <ul class="list-disc list-inside space-y-1 text-xs text-slate-300">
+              <li>關卡難度逐步遞增，考驗空間旋轉與心算思維。</li>
+              <li>卡關時可使用「提示」功能尋求靈感。</li>
+              <li>步數越少，獲得三星評級的機會越高！</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 快捷鍵對照表 -->
+        <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+          <h4 class="font-bold text-slate-200 mb-2.5 flex items-center gap-2">
+            <i class="fa-solid fa-keyboard text-cyan-400"></i> 雙人鍵盤快捷鍵速查 (2P Speed Battle)
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="p-2.5 bg-slate-950/70 rounded-xl border border-cyan-500/20">
+              <div class="font-bold text-cyan-400 mb-1">玩家一 (P1) 鍵位：</div>
+              <div><kbd class="cyber-keycap px-1 text-[10px]">A</kbd> 左旋 90° · <kbd class="cyber-keycap px-1 text-[10px]">D</kbd> 右旋 90°</div>
+              <div class="mt-1"><kbd class="cyber-keycap px-1 text-[10px]">W</kbd> 翻面 · <kbd class="cyber-keycap px-1.5 text-[10px]">SPACE</kbd> 提交答案</div>
+            </div>
+            <div class="p-2.5 bg-slate-950/70 rounded-xl border border-fuchsia-500/20">
+              <div class="font-bold text-fuchsia-400 mb-1">玩家二 (P2) 鍵位：</div>
+              <div><kbd class="cyber-keycap px-1 text-[10px]">←</kbd> 左旋 90° · <kbd class="cyber-keycap px-1 text-[10px]">→</kbd> 右旋 90°</div>
+              <div class="mt-1"><kbd class="cyber-keycap px-1 text-[10px]">↑</kbd> 翻面 · <kbd class="cyber-keycap px-1.5 text-[10px]">ENTER</kbd> 提交答案</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="game.toggleModal('rules-modal', false)" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black tracking-wider transition">
+        掌握規則，開始遊玩！
+      </button>
+    </div>
+  </div>
+
+  <!-- =============================================================
+       Modal 2：獲勝通關彈窗 (Victory Modal)
+       ============================================================= -->
+  <div id="victory-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-lg flex items-center justify-center p-4 hidden">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-8 border-2 border-yellow-400/80 text-center space-y-6 win-glow relative overflow-hidden">
+      
+      <!-- 頂部獎盃動態徽章 -->
+      <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-yellow-400 via-amber-400 to-orange-500 flex items-center justify-center text-slate-950 text-5xl mx-auto shadow-2xl shadow-yellow-500/50 animate-bounce">
+        <i class="fa-solid fa-trophy"></i>
+      </div>
+
+      <div>
+        <h3 class="text-3xl font-orbitron font-black text-white" id="victory-title">ROUND WINNER!</h3>
+        <p class="text-yellow-400 font-bold mt-2 text-base leading-relaxed" id="victory-desc">玩家率先完成了完美 SWISH！</p>
+      </div>
+
+      <button onclick="game.closeVictoryModal()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-slate-950 font-black text-lg tracking-wider shadow-lg shadow-yellow-500/30 transition transform active:scale-98">
+        進行下一局 (CONTINUE NEXT)
+      </button>
+    </div>
+  </div>
+
+  <!-- =============================================================
+       遊戲核心邏輯引擎 (Web Audio, Particle, Matrix Math, Controller)
+       ============================================================= -->
+  <script>
+    /* ===================================================================
+       1. Web Audio API 音效合成引擎 (無外部 MP3 依賴，包含 BGM 音樂)
+       =================================================================== */
+    class AudioSynthesizer {
+      constructor() {
+        this.ctx = null;
+        this.isMuted = false;
+        this.isBGMPlaying = false;
+        this.bgmOsc1 = null;
+        this.bgmOsc2 = null;
+        this.bgmGain = null;
+        this.bgmTimer = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      // 旋轉卡牌音效 (流暢滑音)
+      playRotate() {
+        if (this.isMuted) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(640, this.ctx.currentTime + 0.09);
+        gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.09);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.09);
+      }
+
+      // 翻面卡牌音效 (彈性破空感)
+      playFlip() {
+        if (this.isMuted) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(500, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(240, this.ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.22, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.12);
+      }
+
+      // 按鈕/卡片選取音效 (清脆敲擊)
+      playSelect() {
+        if (this.isMuted) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.05);
+      }
+
+      // 成功答對音效 (通關和弦)
+      playSuccess() {
+        if (this.isMuted) return;
+        this.init();
+        const freqs = [523.25, 659.25, 783.99, 1046.50];
+        freqs.forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = f;
+          const t = this.ctx.currentTime + i * 0.08;
+          gain.gain.setValueAtTime(0.2, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.35);
+        });
+      }
+
+      // 勝利狂歡大號角音效 (修復缺少 playVictory 的重大錯誤)
+      playVictory() {
+        if (this.isMuted) return;
+        this.init();
+        const chords = [
+          [523.25, 659.25, 783.99],       // C Major
+          [587.33, 739.99, 880.00],       // D Major
+          [659.25, 830.61, 987.77],       // E Major
+          [783.99, 987.77, 1174.66, 1567.98] // G Major High Finale
+        ];
+
+        chords.forEach((chord, step) => {
+          const startTime = this.ctx.currentTime + step * 0.16;
+          chord.forEach(f => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = f;
+            gain.gain.setValueAtTime(0.15, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + 0.4);
+          });
+        });
+      }
+
+      // 答錯震動音效
+      playError() {
+        if (this.isMuted) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(90, this.ctx.currentTime + 0.28);
+        gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.28);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.28);
+      }
+
+      // 倒數滴答聲
+      playTick() {
+        if (this.isMuted) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(950, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.04);
+      }
+
+      // 音效靜音切換
+      toggleMute() {
+        this.isMuted = !this.isMuted;
+        const btn = document.getElementById('btn-sound');
+        btn.innerHTML = this.isMuted ? 
+          '<i class="fa-solid fa-volume-xmark text-sm text-rose-400"></i>' : 
+          '<i class="fa-solid fa-volume-high text-sm"></i>';
+      }
+
+      // 賽博 BGM 合成氛圍旋律
+      toggleBGM() {
+        this.init();
+        this.isBGMPlaying = !this.isBGMPlaying;
+        const btn = document.getElementById('btn-bgm');
+
+        if (this.isBGMPlaying) {
+          btn.classList.add('text-cyan-400', 'border-cyan-400', 'shadow-lg', 'shadow-cyan-500/30');
+          this.startBGMNotes();
+        } else {
+          btn.classList.remove('text-cyan-400', 'border-cyan-400', 'shadow-lg', 'shadow-cyan-500/30');
+          if (this.bgmTimer) clearInterval(this.bgmTimer);
+        }
+      }
+
+      startBGMNotes() {
+        const notes = [130.81, 164.81, 196.00, 246.94, 261.63, 196.00]; // Synthwave bass arpeggio
+        let step = 0;
+        this.bgmTimer = setInterval(() => {
+          if (!this.isBGMPlaying || this.isMuted) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(notes[step % notes.length], this.ctx.currentTime);
+          gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.45);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.45);
+          step++;
+        }, 500);
+      }
+    }
+
+    const audioSynth = new AudioSynthesizer();
+
+    /* ===================================================================
+       2. 背景 Canvas 粒子與星空連結動態系統 (Constellation & Fireworks)
+       =================================================================== */
+    class ParticleEngine {
+      constructor() {
+        this.canvas = document.getElementById('bg-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.particles = [];
+        this.fireworks = [];
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        this.initParticles();
+        this.animate();
+      }
+
+      resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+      }
+
+      initParticles() {
+        this.particles = [];
+        const count = Math.min(Math.floor((this.canvas.width * this.canvas.height) / 18000), 75);
+        for (let i = 0; i < count; i++) {
+          this.particles.push({
+            x: Math.random() * this.canvas.width,
+            y: Math.random() * this.canvas.height,
+            vx: (Math.random() - 0.5) * 0.35,
+            vy: (Math.random() - 0.5) * 0.35,
+            radius: Math.random() * 2 + 1,
+            color: ['#00f3ff', '#ff2a85', '#00ff9d', '#b537f2', '#ffc800'][Math.floor(Math.random() * 5)],
+            alpha: Math.random() * 0.4 + 0.15
+          });
+        }
+      }
+
+      spawnFireworks(x, y, color = '#ffc800') {
+        for (let i = 0; i < 50; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = Math.random() * 9 + 3;
+          this.fireworks.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            radius: Math.random() * 3.5 + 2,
+            color: color,
+            alpha: 1,
+            decay: Math.random() * 0.02 + 0.015
+          });
+        }
+      }
+
+      animate() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // 繪製粒子間弱連接線
+        for (let i = 0; i < this.particles.length; i++) {
+          for (let j = i + 1; j < this.particles.length; j++) {
+            const dx = this.particles[i].x - this.particles[j].x;
+            const dy = this.particles[i].y - this.particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 110) {
+              this.ctx.beginPath();
+              this.ctx.moveTo(this.particles[i].x, this.particles[i].y);
+              this.ctx.lineTo(this.particles[j].x, this.particles[j].y);
+              this.ctx.strokeStyle = this.particles[i].color;
+              this.ctx.globalAlpha = (1 - dist / 110) * 0.12;
+              this.ctx.lineWidth = 1;
+              this.ctx.stroke();
+            }
+          }
+        }
+
+        // 背景微光粒子
+        this.particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > this.canvas.width) p.vx *= -1;
+          if (p.y < 0 || p.y > this.canvas.height) p.vy *= -1;
+
+          this.ctx.beginPath();
+          this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          this.ctx.fillStyle = p.color;
+          this.ctx.globalAlpha = p.alpha;
+          this.ctx.fill();
+        });
+
+        // 勝利煙花物理動態
+        for (let i = this.fireworks.length - 1; i >= 0; i--) {
+          const f = this.fireworks[i];
+          f.x += f.vx;
+          f.y += f.vy;
+          f.vy += 0.12; // 重力加速度
+          f.alpha -= f.decay;
+
+          if (f.alpha <= 0) {
+            this.fireworks.splice(i, 1);
+            continue;
+          }
+
+          this.ctx.beginPath();
+          this.ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+          this.ctx.fillStyle = f.color;
+          this.ctx.globalAlpha = f.alpha;
+          this.ctx.fill();
+        }
+
+        this.ctx.globalAlpha = 1.0;
+        requestAnimationFrame(() => this.animate());
+      }
+    }
+
+    const particleEngine = new ParticleEngine();
+
+    /* ===================================================================
+       3. 核心卡牌矩陣數學與精確幾何疊加引擎 (Matrix & SVG Engine)
+       =================================================================== */
+    const NEON_COLORS = {
+      cyan: { main: '#00f3ff', glow: 'rgba(0,243,255,0.7)', light: '#a6fbff' },
+      pink: { main: '#ff2a85', glow: 'rgba(255,42,133,0.7)', light: '#ffa3ce' },
+      green: { main: '#00ff9d', glow: 'rgba(0,255,157,0.7)', light: '#afffe0' },
+      yellow: { main: '#ffc800', glow: 'rgba(255,200,0,0.7)', light: '#fff199' },
+      purple: { main: '#bf40ff', glow: 'rgba(191,64,255,0.7)', light: '#ecc2ff' }
+    };
+
+    // 順時針旋轉 90°
+    function rotateGrid90(grid) {
+      const res = new Array(9).fill(null);
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          res[c * 3 + (2 - r)] = grid[r * 3 + c];
+        }
+      }
+      return res;
+    }
+
+    // 水平鏡像翻面
+    function flipGridH(grid) {
+      const res = new Array(9).fill(null);
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          res[r * 3 + (2 - c)] = grid[r * 3 + c];
+        }
+      }
+      return res;
+    }
+
+    // 將多張卡牌由底至頂 (Bottom to Top) 進行透明圖層疊加
+    function compositeCardGrids(cards) {
+      const composite = new Array(9).fill(null);
+
+      cards.forEach(card => {
+        let currentGrid = [...card.rawGrid];
+
+        // 套用卡牌個別的旋轉與鏡像翻面
+        let rot = (card.rotation % 360 + 360) % 360;
+        for (let i = 0; i < rot / 90; i++) {
+          currentGrid = rotateGrid90(currentGrid);
+        }
+        if (card.flipH) {
+          currentGrid = flipGridH(currentGrid);
+        }
+
+        // 疊加至復合層
+        for (let i = 0; i < 9; i++) {
+          const cell = currentGrid[i];
+          if (cell) {
+            if (!composite[i]) {
+              composite[i] = { ...cell };
+            } else {
+              // 若一層為圓點，另一層為同色或異色圓圈，則套合成 SWISH 雙重元件 (both)
+              if (composite[i].type !== cell.type) {
+                composite[i] = {
+                  type: 'both',
+                  dotColor: composite[i].type === 'dot' ? composite[i].color : cell.color,
+                  ringColor: composite[i].type === 'ring' ? composite[i].color : cell.color
+                };
+              } else {
+                // 同類型覆蓋
+                composite[i] = { ...cell };
+              }
+            }
+          }
+        }
+      });
+
+      return composite;
+    }
+
+    // 驗證玩家疊加圖案與目標圖案是否「完全一致」
+    function checkGridsMatch(composite, target) {
+      for (let i = 0; i < 9; i++) {
+        const c = composite[i];
+        const t = target[i];
+
+        if (!c && !t) continue;
+        if ((!c && t) || (c && !t)) return false;
+
+        if (t.type === 'both') {
+          if (c.type !== 'both') return false;
+          if (c.dotColor !== t.dotColor || c.ringColor !== t.ringColor) return false;
+        } else if (t.type === 'dot') {
+          if (c.type !== 'dot' && c.type !== 'both') return false;
+          const color = c.type === 'both' ? c.dotColor : c.color;
+          if (color !== t.color) return false;
+        } else if (t.type === 'ring') {
+          if (c.type !== 'ring' && c.type !== 'both') return false;
+          const color = c.type === 'both' ? c.ringColor : c.color;
+          if (color !== t.color) return false;
+        }
+      }
+      return true;
+    }
+
+    // 頂級高品質 SVG 圖形渲染引擎
+    function renderGridSVG(grid, size = 200, options = {}) {
+      const cellWidth = size / 3;
+      let svgContent = '';
+      const uniqueId = 'svg_' + Math.floor(Math.random() * 1000000);
+
+      // 科技參考十字瞄準星標誌 (科技感細緻網格)
+      for (let i = 1; i < 3; i++) {
+        const p = i * cellWidth;
+        svgContent += `
+          <line x1="${p}" y1="0" x2="${p}" y2="${size}" stroke="rgba(255,255,255,0.06)" stroke-width="1.2" stroke-dasharray="3,3"/>
+          <line x1="0" y1="${p}" x2="${size}" y2="${p}" stroke="rgba(255,255,255,0.06)" stroke-width="1.2" stroke-dasharray="3,3"/>
+        `;
+      }
+
+      // 4 個交點的微小瞄準十字
+      for (let r = 1; r < 3; r++) {
+        for (let c = 1; c < 3; c++) {
+          const cx = c * cellWidth;
+          const cy = r * cellWidth;
+          svgContent += `
+            <path d="M ${cx-4} ${cy} H ${cx+4} M ${cx} ${cy-4} V ${cy+4}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          `;
+        }
+      }
+
+      if (grid) {
+        for (let r = 0; r < 3; r++) {
+          for (let c = 0; c < 3; c++) {
+            const cell = grid[r * 3 + c];
+            if (!cell) continue;
+
+            const cx = c * cellWidth + cellWidth / 2;
+            const cy = r * cellWidth + cellWidth / 2;
+            const radius = cellWidth * 0.28;
+
+            if (cell.type === 'dot') {
+              const pal = NEON_COLORS[cell.color] || { main: cell.color, glow: cell.color, light: '#ffffff' };
+              const gradId = `${uniqueId}_grad_${r}_${c}`;
+              svgContent += `
+                <defs>
+                  <radialGradient id="${gradId}" cx="35%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="${pal.light}" />
+                    <stop offset="60%" stop-color="${pal.main}" />
+                    <stop offset="100%" stop-color="${pal.main}" stop-opacity="0.85" />
+                  </radialGradient>
+                </defs>
+                <circle cx="${cx}" cy="${cy}" r="${radius + 2}" fill="${pal.main}" opacity="0.3" filter="url(#glow-heavy)" />
+                <circle cx="${cx}" cy="${cy}" r="${radius}" fill="url(#${gradId})" />
+                <ellipse cx="${cx - radius*0.3}" cy="${cy - radius*0.3}" rx="${radius*0.25}" ry="${radius*0.18}" fill="rgba(255,255,255,0.7)" transform="rotate(-30 ${cx - radius*0.3} ${cy - radius*0.3})" />
+              `;
+            } else if (cell.type === 'ring') {
+              const pal = NEON_COLORS[cell.color] || { main: cell.color, glow: cell.color, light: '#ffffff' };
+              svgContent += `
+                <circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${pal.main}" stroke-width="${size * 0.045}" opacity="0.4" filter="url(#glow-heavy)" />
+                <circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${pal.main}" stroke-width="${size * 0.04}" stroke-linecap="round" />
+                <circle cx="${cx}" cy="${cy}" r="${radius + size * 0.015}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+              `;
+            } else if (cell.type === 'both') {
+              // 完美 SWISH 狀態！圓點套進圓圈
+              const dotPal = NEON_COLORS[cell.dotColor] || { main: cell.dotColor, light: '#ffffff' };
+              const ringPal = NEON_COLORS[cell.ringColor] || { main: cell.ringColor, light: '#ffffff' };
+              const gradId = `${uniqueId}_both_${r}_${c}`;
+              svgContent += `
+                <defs>
+                  <radialGradient id="${gradId}" cx="35%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="${dotPal.light}" />
+                    <stop offset="70%" stop-color="${dotPal.main}" />
+                  </radialGradient>
+                </defs>
+                <!-- 雙重融合光環 -->
+                <circle cx="${cx}" cy="${cy}" r="${radius * 1.25}" fill="none" stroke="${ringPal.main}" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.6"/>
+                <circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${ringPal.main}" stroke-width="${size * 0.045}" filter="url(#glow-heavy)" />
+                <circle cx="${cx}" cy="${cy}" r="${radius * 0.62}" fill="url(#${gradId})" filter="url(#glow-heavy)" />
+                <!-- 中心星芒 -->
+                <path d="M ${cx-2} ${cy} H ${cx+2} M ${cx} ${cy-2} V ${cy+2}" stroke="#ffffff" stroke-width="1.5" />
+              `;
+            }
+          }
+        }
+      }
+
+      return `
+        <svg viewBox="0 0 ${size} ${size}" class="w-full h-full drop-shadow-md">
+          <defs>
+            <filter id="glow-heavy" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="3.5" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+          ${svgContent}
+        </svg>
+      `;
+    }
+
+    /* ===================================================================
+       4. 主遊戲控制器與狀態機 (Game Controller & Battle System)
+       =================================================================== */
+    class GameController {
+      constructor() {
+        this.mode = '2p'; // '2p', '1p', 'sandbox'
+        
+        // 2P 對戰狀態
+        this.p1Score = 0;
+        this.p2Score = 0;
+        this.currentRound = 1;
+        this.targetGrid = null;
+        this.timerSeconds = 60;
+        this.timerInterval = null;
+
+        // 焦點操作卡片 (null 代表操作所有選取的卡片，數字 0, 1, 2 代表操作指定卡片)
+        this.p1FocusedCard = null;
+        this.p2FocusedCard = null;
+        this.p1pFocusedCard = null;
+        this.sandboxFocusedCard = 0;
+
+        // 手牌池
+        this.p1Hand = [];
+        this.p2Hand = [];
+
+        // 1P 闖關模式狀態
+        this.p1pStage = 1;
+        this.p1pMoveCount = 0;
+        this.p1pHand = [];
+        this.p1pTargetGrid = null;
+        this.p1pHistory = [];
+
+        // 沙盒手牌
+        this.sandboxHand = [];
+
+        this.initEventListeners();
+      }
+
+      init() {
+        this.startNew2PRound();
+        this.initSandbox();
+      }
+
+      // 切換遊戲模式
+      switchMode(newMode) {
+        audioSynth.playSelect();
+        this.mode = newMode;
+
+        const btn2p = document.getElementById('btn-mode-2p');
+        const btn1p = document.getElementById('btn-mode-1p');
+        const btnSb = document.getElementById('btn-mode-sandbox');
+        const view2p = document.getElementById('mode-2p-view');
+        const view1p = document.getElementById('mode-1p-view');
+        const viewSb = document.getElementById('mode-sandbox-view');
+
+        const activeClass = "px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center space-x-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 text-white shadow-lg shadow-cyan-500/30";
+        const inactiveClass = "px-5 py-2 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all flex items-center space-x-2";
+
+        btn2p.className = newMode === '2p' ? activeClass : inactiveClass;
+        btn1p.className = newMode === '1p' ? activeClass : inactiveClass;
+        btnSb.className = newMode === 'sandbox' ? activeClass : inactiveClass;
+
+        view2p.classList.toggle('hidden', newMode !== '2p');
+        view1p.classList.toggle('hidden', newMode !== '1p');
+        viewSb.classList.toggle('hidden', newMode !== 'sandbox');
+
+        if (newMode === '2p') {
+          this.startNew2PRound();
+        } else if (newMode === '1p') {
+          this.stopRaceTimer();
+          this.load1PStage(this.p1pStage);
+        } else if (newMode === 'sandbox') {
+          this.stopRaceTimer();
+          this.renderSandbox();
+        }
+      }
+
+      // 生成保證可解且具備真正 SWISH 疊合樂趣的題目與卡片
+      generatePuzzle(cardCount = 3) {
+        const colorKeys = ['cyan', 'pink', 'green', 'yellow', 'purple'];
+        const cards = [];
+
+        for (let c = 0; c < cardCount; c++) {
+          const grid = new Array(9).fill(null);
+          // 每張卡放置 2~3 個元件
+          const elemCount = Math.floor(Math.random() * 2) + 2;
+          for (let e = 0; e < elemCount; e++) {
+            const pos = Math.floor(Math.random() * 9);
+            if (!grid[pos]) {
+              grid[pos] = {
+                type: Math.random() > 0.4 ? 'dot' : 'ring',
+                color: colorKeys[Math.floor(Math.random() * colorKeys.length)]
+              };
+            }
+          }
+          cards.push({
+            id: c + 1,
+            rawGrid: grid,
+            rotation: 0,
+            flipH: false,
+            selected: true
+          });
+        }
+
+        // 對生成卡片進行隨機旋轉翻面作為打亂標準答案
+        const tempCards = cards.map(c => ({
+          ...c,
+          rotation: [0, 90, 180, 270][Math.floor(Math.random() * 4)],
+          flipH: Math.random() > 0.5
+        }));
+
+        const targetGrid = compositeCardGrids(tempCards);
+        return { cards, targetGrid };
+      }
+
+      /* ---------------- 2P 對戰流程 ---------------- */
+      startNew2PRound() {
+        const puzzle = this.generatePuzzle(3);
+        this.targetGrid = puzzle.targetGrid;
+        
+        // 複製給雙方公平相同的手牌
+        this.p1Hand = puzzle.cards.map(c => ({ ...c, rotation: 0, flipH: false, selected: true }));
+        this.p2Hand = puzzle.cards.map(c => ({ ...c, rotation: 0, flipH: false, selected: true }));
+
+        this.p1FocusedCard = null;
+        this.p2FocusedCard = null;
+
+        document.getElementById('p2-round-indicator').innerText = `ROUND ${this.currentRound}`;
+        this.renderTarget();
+        this.renderPlayerWorkspace(1);
+        this.renderPlayerWorkspace(2);
+        this.startRaceTimer();
+      }
+
+      next2PRound() {
+        this.currentRound++;
+        this.startNew2PRound();
+      }
+
+      startRaceTimer() {
+        this.stopRaceTimer();
+        this.timerSeconds = 60;
+        const timerEl = document.getElementById('race-timer');
+        timerEl.innerText = this.timerSeconds;
+        timerEl.classList.remove('urgent-timer');
+
+        this.timerInterval = setInterval(() => {
+          this.timerSeconds--;
+          timerEl.innerText = this.timerSeconds;
+
+          if (this.timerSeconds <= 10 && this.timerSeconds > 0) {
+            timerEl.classList.add('urgent-timer');
+            audioSynth.playTick();
+          }
+
+          if (this.timerSeconds <= 0) {
+            this.stopRaceTimer();
+            audioSynth.playError();
+            // 時間到自動換題
+            this.next2PRound();
+          }
+        }, 1000);
+      }
+
+      stopRaceTimer() {
+        if (this.timerInterval) {
+          clearInterval(this.timerInterval);
+          this.timerInterval = null;
+        }
+      }
+
+      renderTarget() {
+        const container = document.getElementById('target-card-container');
+        container.innerHTML = renderGridSVG(this.targetGrid, 220);
+      }
+
+      renderPlayerWorkspace(pNum) {
+        const hand = pNum === 1 ? this.p1Hand : this.p2Hand;
+        const workbenchEl = document.getElementById(pNum === 1 ? 'p1-workbench' : 'p2-workbench');
+        const handEl = document.getElementById(pNum === 1 ? 'p1-hand-cards' : 'p2-hand-cards');
+        const focusedIdx = pNum === 1 ? this.p1FocusedCard : this.p2FocusedCard;
+        const tagEl = document.getElementById(pNum === 1 ? 'p1-active-card-tag' : 'p2-active-card-tag');
+
+        // 更新操控對象標籤
+        if (focusedIdx === null) {
+          tagEl.innerText = "操控對象：全部疊層卡牌";
+        } else {
+          tagEl.innerText = `操控對象：卡牌 #${hand[focusedIdx].id}`;
+        }
+
+        // 疊加預覽
+        const selectedCards = hand.filter(c => c.selected);
+        const composite = compositeCardGrids(selectedCards);
+        workbenchEl.innerHTML = renderGridSVG(composite, 230);
+
+        // 手牌清單
+        handEl.innerHTML = hand.map((card, idx) => {
+          const cardComp = compositeCardGrids([card]);
+          const isFocused = focusedIdx === idx;
+          const isSelected = card.selected;
+
+          let borderClass = 'border-slate-800 opacity-60';
+          if (isSelected) {
+            borderClass = pNum === 1 
+              ? 'border-cyan-500 bg-cyan-500/15 shadow-md shadow-cyan-500/25 opacity-100' 
+              : 'border-fuchsia-500 bg-fuchsia-500/15 shadow-md shadow-fuchsia-500/25 opacity-100';
+          }
+          if (isFocused) {
+            borderClass += ' ring-2 ring-yellow-400 scale-105';
+          }
+
+          return `
+            <div onclick="game.selectOrFocusCard(${pNum}, ${idx})" class="w-20 h-20 md:w-22 md:h-22 acrylic-card rounded-xl p-1 cursor-pointer transition flex items-center justify-center relative ${borderClass} group">
+              <span class="absolute top-1 left-1.5 text-[9px] font-orbitron font-extrabold text-slate-300">#${card.id}</span>
+              <span class="absolute top-1 right-1.5 text-[9px] font-orbitron text-yellow-300">${card.rotation}°${card.flipH ? ' ⇄' : ''}</span>
+              ${renderGridSVG(cardComp, 70)}
+            </div>
+          `;
+        }).join('');
+      }
+
+      selectOrFocusCard(pNum, idx) {
+        audioSynth.playSelect();
+        if (pNum === 1) {
+          if (this.p1FocusedCard === idx) {
+            // 切換包含/取消疊加
+            this.p1Hand[idx].selected = !this.p1Hand[idx].selected;
+          } else {
+            this.p1FocusedCard = idx;
+            this.p1Hand[idx].selected = true; // 選中焦點卡必定加入疊加
+          }
+          this.renderPlayerWorkspace(1);
+        } else if (pNum === 2) {
+          if (this.p2FocusedCard === idx) {
+            this.p2Hand[idx].selected = !this.p2Hand[idx].selected;
+          } else {
+            this.p2FocusedCard = idx;
+            this.p2Hand[idx].selected = true;
+          }
+          this.renderPlayerWorkspace(2);
+        }
+      }
+
+      focusAllCards(pNum) {
+        audioSynth.playSelect();
+        if (pNum === 1) {
+          this.p1FocusedCard = null;
+          this.p1Hand.forEach(c => c.selected = true);
+          this.renderPlayerWorkspace(1);
+        } else if (pNum === 2) {
+          this.p2FocusedCard = null;
+          this.p2Hand.forEach(c => c.selected = true);
+          this.renderPlayerWorkspace(2);
+        } else if (pNum === 0) {
+          this.p1pFocusedCard = null;
+          this.p1pHand.forEach(c => c.selected = true);
+          this.render1PWorkspace();
+        }
+      }
+
+      rotatePlayerCard(pNum, deg) {
+        audioSynth.playRotate();
+        const hand = pNum === 1 ? this.p1Hand : (pNum === 2 ? this.p2Hand : (pNum === 0 ? this.p1pHand : this.sandboxHand));
+        const focused = pNum === 1 ? this.p1FocusedCard : (pNum === 2 ? this.p2FocusedCard : (pNum === 0 ? this.p1pFocusedCard : this.sandboxFocusedCard));
+
+        if (focused !== null && hand[focused]) {
+          hand[focused].rotation = (hand[focused].rotation + deg + 360) % 360;
+        } else {
+          // 操作全部選取卡牌
+          hand.forEach(c => {
+            if (c.selected) {
+              c.rotation = (c.rotation + deg + 360) % 360;
+            }
+          });
+        }
+
+        if (pNum === 0) {
+          this.p1pMoveCount++;
+          document.getElementById('1p-move-count').innerText = this.p1pMoveCount;
+          this.save1PHistory();
+          this.render1PWorkspace();
+        } else if (pNum === 3) {
+          this.renderSandbox();
+        } else {
+          this.renderPlayerWorkspace(pNum);
+        }
+      }
+
+      flipPlayerCard(pNum, type) {
+        audioSynth.playFlip();
+        const hand = pNum === 1 ? this.p1Hand : (pNum === 2 ? this.p2Hand : (pNum === 0 ? this.p1pHand : this.sandboxHand));
+        const focused = pNum === 1 ? this.p1FocusedCard : (pNum === 2 ? this.p2FocusedCard : (pNum === 0 ? this.p1pFocusedCard : this.sandboxFocusedCard));
+
+        if (focused !== null && hand[focused]) {
+          hand[focused].flipH = !hand[focused].flipH;
+        } else {
+          hand.forEach(c => {
+            if (c.selected) {
+              c.flipH = !c.flipH;
+            }
+          });
+        }
+
+        if (pNum === 0) {
+          this.p1pMoveCount++;
+          document.getElementById('1p-move-count').innerText = this.p1pMoveCount;
+          this.save1PHistory();
+          this.render1PWorkspace();
+        } else if (pNum === 3) {
+          this.renderSandbox();
+        } else {
+          this.renderPlayerWorkspace(pNum);
+        }
+      }
+
+      clearPlayerStack(pNum) {
+        audioSynth.playSelect();
+        const hand = pNum === 1 ? this.p1Hand : (pNum === 2 ? this.p2Hand : (pNum === 0 ? this.p1pHand : this.sandboxHand));
+        hand.forEach(c => {
+          c.rotation = 0;
+          c.flipH = false;
+        });
+
+        if (pNum === 0) {
+          this.render1PWorkspace();
+        } else if (pNum === 3) {
+          this.renderSandbox();
+        } else {
+          this.renderPlayerWorkspace(pNum);
+        }
+      }
+
+      submitAnswer(pNum) {
+        const hand = pNum === 1 ? this.p1Hand : this.p2Hand;
+        const selected = hand.filter(c => c.selected);
+        const composite = compositeCardGrids(selected);
+
+        const isWin = checkGridsMatch(composite, this.targetGrid);
+
+        if (isWin) {
+          audioSynth.playSuccess();
+          audioSynth.playVictory();
+          
+          if (pNum === 1) this.p1Score += 100;
+          else this.p2Score += 100;
+
+          document.getElementById('p1-score').innerHTML = `${this.p1Score} <span class="text-sm font-sans font-bold text-cyan-300">PTS</span>`;
+          document.getElementById('p2-score').innerHTML = `${this.p2Score} <span class="text-sm font-sans font-bold text-fuchsia-300">PTS</span>`;
+
+          // 獲勝煙火特效
+          const panel = document.getElementById(pNum === 1 ? 'p1-panel' : 'p2-panel');
+          const rect = panel.getBoundingClientRect();
+          particleEngine.spawnFireworks(rect.left + rect.width / 2, rect.top + rect.height / 2, pNum === 1 ? '#00f3ff' : '#ff2a85');
+
+          // 彈窗
+          document.getElementById('victory-title').innerText = `P${pNum} ROUND WIN!`;
+          document.getElementById('victory-desc').innerText = `恭喜玩家 ${pNum} 率先拼湊出完美 SWISH 圖形！(+100分)`;
+          this.toggleModal('victory-modal', true);
+
+        } else {
+          audioSynth.playError();
+          const panel = document.getElementById(pNum === 1 ? 'p1-panel' : 'p2-panel');
+          panel.classList.add('shake');
+          setTimeout(() => panel.classList.remove('shake'), 450);
+
+          const statusEl = document.getElementById(pNum === 1 ? 'p1-status' : 'p2-status');
+          statusEl.innerText = "驗證不匹配！";
+          statusEl.className = "text-xs font-bold text-rose-300 bg-rose-950 px-3 py-0.5 rounded-full border border-rose-600";
+          setTimeout(() => {
+            statusEl.innerText = "準備中";
+            statusEl.className = "text-xs font-bold text-slate-300 bg-slate-900 px-3 py-0.5 rounded-full border border-slate-700";
+          }, 1400);
+        }
+      }
+
+      closeVictoryModal() {
+        this.toggleModal('victory-modal', false);
+        if (this.mode === '2p') {
+          this.next2PRound();
+        } else if (this.mode === '1p') {
+          this.p1pStage++;
+          this.load1PStage(this.p1pStage);
+        }
+      }
+
+      /* ---------------- 1P 單人闖關流程 ---------------- */
+      load1PStage(stageNum) {
+        this.p1pStage = stageNum;
+        this.p1pMoveCount = 0;
+        this.p1pHistory = [];
+        this.p1pFocusedCard = null;
+
+        document.getElementById('1p-stage-title').innerText = `STAGE ${stageNum < 10 ? '0' + stageNum : stageNum}`;
+        document.getElementById('1p-move-count').innerText = "0";
+
+        // 隨關卡難度增加卡片數量
+        const cardCount = stageNum <= 2 ? 2 : (stageNum <= 6 ? 3 : 4);
+        const difficultyEl = document.getElementById('1p-difficulty-badge');
+        if (cardCount === 2) {
+          difficultyEl.innerText = '入門級 (2張卡牌)';
+          difficultyEl.className = 'px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px]';
+        } else if (cardCount === 3) {
+          difficultyEl.innerText = '進階級 (3張卡牌)';
+          difficultyEl.className = 'px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px]';
+        } else {
+          difficultyEl.innerText = '大師級 (4張卡牌)';
+          difficultyEl.className = 'px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px]';
+        }
+
+        const puzzle = this.generatePuzzle(cardCount);
+        this.p1pTargetGrid = puzzle.targetGrid;
+        this.p1pHand = puzzle.cards.map(c => ({ ...c, rotation: 0, flipH: false, selected: true }));
+
+        document.getElementById('1p-target-container').innerHTML = renderGridSVG(this.p1pTargetGrid, 250);
+        this.save1PHistory();
+        this.render1PWorkspace();
+      }
+
+      reset1PStage() {
+        audioSynth.playSelect();
+        this.load1PStage(this.p1pStage);
+      }
+
+      save1PHistory() {
+        this.p1pHistory.push(JSON.stringify(this.p1pHand));
+        if (this.p1pHistory.length > 20) this.p1pHistory.shift();
+      }
+
+      undo1PMove() {
+        if (this.p1pHistory.length > 1) {
+          audioSynth.playRotate();
+          this.p1pHistory.pop(); // 移除當前
+          const prev = this.p1pHistory[this.p1pHistory.length - 1];
+          this.p1pHand = JSON.parse(prev);
+          this.p1pMoveCount = Math.max(0, this.p1pMoveCount - 1);
+          document.getElementById('1p-move-count').innerText = this.p1pMoveCount;
+          this.render1PWorkspace();
+        }
+      }
+
+      // 智慧靈感提示系統
+      give1PHint() {
+        audioSynth.playSelect();
+        // 找到一個尚未正確就位的卡片給予方向引導
+        const btn = document.getElementById('btn-1p-hint');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>尋找中...</span>';
+        
+        setTimeout(() => {
+          btn.innerHTML = '<i class="fa-solid fa-lightbulb"></i> <span>已標記最佳卡片!</span>';
+          this.p1pFocusedCard = 0;
+          this.render1PWorkspace();
+          setTimeout(() => {
+            btn.innerHTML = '<i class="fa-solid fa-lightbulb"></i> <span>提示 (Hint)</span>';
+          }, 2000);
+        }, 300);
+      }
+
+      render1PWorkspace() {
+        const workbenchEl = document.getElementById('1p-workbench');
+        const handEl = document.getElementById('1p-hand-cards');
+        const tagEl = document.getElementById('1p-active-card-tag');
+
+        if (this.p1pFocusedCard === null) {
+          tagEl.innerText = "操控對象：全部疊層卡牌";
+        } else {
+          tagEl.innerText = `操控對象：卡牌 #${this.p1pHand[this.p1pFocusedCard].id}`;
+        }
+
+        const selected = this.p1pHand.filter(c => c.selected);
+        const composite = compositeCardGrids(selected);
+        workbenchEl.innerHTML = renderGridSVG(composite, 250);
+
+        handEl.innerHTML = this.p1pHand.map((card, idx) => {
+          const cardComp = compositeCardGrids([card]);
+          const isFocused = this.p1pFocusedCard === idx;
+          const isSelected = card.selected;
+
+          let borderClass = 'border-slate-800 opacity-60';
+          if (isSelected) {
+            borderClass = 'border-amber-400 bg-amber-500/15 shadow-md shadow-amber-500/25 opacity-100';
+          }
+          if (isFocused) {
+            borderClass += ' ring-2 ring-yellow-300 scale-105';
+          }
+
+          return `
+            <div onclick="game.select1PCard(${idx})" class="w-20 h-20 md:w-22 md:h-22 acrylic-card rounded-xl p-1 cursor-pointer transition flex items-center justify-center relative ${borderClass}">
+              <span class="absolute top-1 left-1.5 text-[9px] font-orbitron font-extrabold text-slate-300">#${card.id}</span>
+              <span class="absolute top-1 right-1.5 text-[9px] font-orbitron text-yellow-300">${card.rotation}°${card.flipH ? ' ⇄' : ''}</span>
+              ${renderGridSVG(cardComp, 70)}
+            </div>
+          `;
+        }).join('');
+      }
+
+      select1PCard(idx) {
+        audioSynth.playSelect();
+        if (this.p1pFocusedCard === idx) {
+          this.p1pHand[idx].selected = !this.p1pHand[idx].selected;
+        } else {
+          this.p1pFocusedCard = idx;
+          this.p1pHand[idx].selected = true;
+        }
+        this.render1PWorkspace();
+      }
+
+      submit1PAnswer() {
+        const selected = this.p1pHand.filter(c => c.selected);
+        const composite = compositeCardGrids(selected);
+
+        if (checkGridsMatch(composite, this.p1pTargetGrid)) {
+          audioSynth.playSuccess();
+          audioSynth.playVictory();
+          
+          particleEngine.spawnFireworks(window.innerWidth / 2, window.innerHeight / 2, '#ffc800');
+
+          document.getElementById('victory-title').innerText = `STAGE ${this.p1pStage} CLEAR!`;
+          document.getElementById('victory-desc').innerText = `恭喜成功解開空間圖形！總累計步數: ${this.p1pMoveCount} 步`;
+          this.toggleModal('victory-modal', true);
+
+        } else {
+          audioSynth.playError();
+          const wb = document.getElementById('1p-workbench');
+          wb.classList.add('shake');
+          setTimeout(() => wb.classList.remove('shake'), 450);
+        }
+      }
+
+      /* ---------------- 沙盒實驗模式流程 ---------------- */
+      initSandbox() {
+        const puzzle = this.generatePuzzle(3);
+        this.sandboxHand = puzzle.cards.map(c => ({ ...c, rotation: 0, flipH: false, selected: true }));
+        this.sandboxFocusedCard = 0;
+      }
+
+      randomizeSandboxCards() {
+        audioSynth.playSelect();
+        this.initSandbox();
+        this.renderSandbox();
+      }
+
+      renderSandbox() {
+        const workbenchEl = document.getElementById('sandbox-workbench');
+        const handEl = document.getElementById('sandbox-hand-cards');
+        const tagEl = document.getElementById('sandbox-active-card-tag');
+        const statsEl = document.getElementById('sandbox-match-stats');
+
+        tagEl.innerText = `操控對象：卡牌 #${this.sandboxHand[this.sandboxFocusedCard].id}`;
+
+        const selected = this.sandboxHand.filter(c => c.selected);
+        const composite = compositeCardGrids(selected);
+        workbenchEl.innerHTML = renderGridSVG(composite, 250);
+
+        // 統計 SWISH 數量
+        let bothCount = 0;
+        composite.forEach(c => {
+          if (c && c.type === 'both') bothCount++;
+        });
+
+        statsEl.innerHTML = `
+          <span class="px-2.5 py-1 rounded-lg bg-purple-950 border border-purple-800 text-purple-300">
+            <i class="fa-solid fa-sparkles text-yellow-300 mr-1"></i>當前雙環 SWISH 數量: <b>${bothCount}</b>
+          </span>
+          <span class="text-slate-400">已疊加 ${selected.length} / ${this.sandboxHand.length} 張卡牌</span>
+        `;
+
+        handEl.innerHTML = this.sandboxHand.map((card, idx) => {
+          const cardComp = compositeCardGrids([card]);
+          const isFocused = this.sandboxFocusedCard === idx;
+          const activeClass = isFocused 
+            ? 'border-2 border-purple-400 bg-purple-500/20 ring-2 ring-purple-300' 
+            : 'border border-slate-700 opacity-70';
+
+          return `
+            <div onclick="game.selectSandboxCard(${idx})" class="w-20 h-20 acrylic-card rounded-xl p-1 cursor-pointer transition flex items-center justify-center relative ${activeClass}">
+              <span class="absolute top-1 left-1.5 text-[9px] font-orbitron font-extrabold text-slate-300">#${card.id}</span>
+              ${renderGridSVG(cardComp, 70)}
+            </div>
+          `;
+        }).join('');
+      }
+
+      selectSandboxCard(idx) {
+        audioSynth.playSelect();
+        this.sandboxFocusedCard = idx;
+        this.renderSandbox();
+      }
+
+      /* ---------------- 通用 Modal 控制與全螢幕 ---------------- */
+      toggleModal(modalId, show) {
+        audioSynth.playSelect();
+        const modal = document.getElementById(modalId);
+        if (show) modal.classList.remove('hidden');
+        else modal.classList.add('hidden');
+      }
+
+      toggleFullScreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+        }
+      }
+
+      /* ---------------- 鍵盤實體按鍵與按鈕監聽 ---------------- */
+      initEventListeners() {
+        window.addEventListener('keydown', (e) => {
+          if (this.mode !== '2p') return;
+
+          // P1 控制監聽
+          if (e.key === 'a' || e.key === 'A') {
+            this.rotatePlayerCard(1, -90);
+            this.flashKeycap('p1-key-a');
+          }
+          if (e.key === 'd' || e.key === 'D') {
+            this.rotatePlayerCard(1, 90);
+            this.flashKeycap('p1-key-d');
+          }
+          if (e.key === 'w' || e.key === 'W') {
+            this.flipPlayerCard(1, 'H');
+            this.flashKeycap('p1-key-w');
+          }
+          if (e.code === 'Space') {
+            e.preventDefault();
+            this.submitAnswer(1);
+            this.flashKeycap('p1-btn-submit');
+          }
+
+          // P2 控制監聽
+          if (e.key === 'ArrowLeft') {
+            this.rotatePlayerCard(2, -90);
+            this.flashKeycap('p2-key-left');
+          }
+          if (e.key === 'ArrowRight') {
+            this.rotatePlayerCard(2, 90);
+            this.flashKeycap('p2-key-right');
+          }
+          if (e.key === 'ArrowUp') {
+            this.flipPlayerCard(2, 'H');
+            this.flashKeycap('p2-key-up');
+          }
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            this.submitAnswer(2);
+            this.flashKeycap('p2-btn-submit');
+          }
+        });
+      }
+
+      flashKeycap(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.add('scale-95', 'brightness-125');
+        setTimeout(() => el.classList.remove('scale-95', 'brightness-125'), 120);
+      }
+    }
+
+    // 初始化遊戲實例
+    const game = new GameController();
+    window.addEventListener('DOMContentLoaded', () => {
+      game.init();
+    });
+  </script>
+</body>
+</html>
